@@ -2,8 +2,7 @@
 
 using codigo.modelo;
 using CpfCnpjLibrary;
-
-class Program
+class App
 {
     static void Main(string[] args)
     {
