@@ -1,19 +1,51 @@
 ﻿namespace codigo;
 
-using codigo.modelo;
+using codigo.Model;
 using CpfCnpjLibrary;
-class App
+using codigo.Data;
+using codigo.Interfaces;
+using codigo.Repository;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+class Program
 {
     static void Main(string[] args)
     {
-        Cliente pessoa = salvarDadosCliente();
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureServices((context, services) =>
+            {
+                services.AddDbContext<ApplicationDbContext>();
+                services.AddScoped<IClienteRepository, ClienteRepository>();
+                services.AddTransient<App>();
+            })
+            .Build();
+
+        var app = host.Services.GetRequiredService<App>();
+        app.Run();
+    }
+}
+
+class App
+{
+    public static IClienteRepository _clienteRepository;
+
+    public App(IClienteRepository clienteRepository)
+    {
+        _clienteRepository = clienteRepository;
+    }
+
+    public void Run()
+    {
+        Cliente pessoa = LerDadosDoCliente();
         Console.WriteLine($"Como posso ajudar? {pessoa.nome}");
         int opcao = 0;
         float valor; 
 
         while (opcao != 3)
         {
-            menu();
+            Menu();
             opcao = int.Parse(Console.ReadLine());
             Console.Clear();
 
@@ -22,12 +54,12 @@ class App
                 case 1:
                     Console.WriteLine("Digite o valor que deseja depositar: ");
                     valor = float.Parse(Console.ReadLine());
-                    depositarSaldo(pessoa, valor);
+                    DepositarSaldo(pessoa, valor);
                     break;
                 case 2:
                     Console.WriteLine("Digite o valor que deseja sacar: ");
                     valor = float.Parse(Console.ReadLine());
-                    sacarSaldo(pessoa, valor);
+                    SacarSaldo(pessoa, valor);
                     break;
                 case 3:
                     Console.WriteLine("Saindo do sistema...");
@@ -39,7 +71,7 @@ class App
         }
     }
 
-    static public void depositarSaldo(Cliente pessoa, float valor)
+    static public void DepositarSaldo(Cliente pessoa, float valor)
     {
         if (valor < 0)
         {
@@ -47,10 +79,11 @@ class App
         }
 
         pessoa.saldo += valor;
-        pessoa.imprimirSaldo();
+        pessoa.ImprimirSaldo();
     }
 
-    static public void sacarSaldo(Cliente pessoa, float valor)
+
+    static public void SacarSaldo(Cliente pessoa, float valor)
     {
         float saldo = pessoa.saldo; 
         if (valor > saldo)
@@ -59,15 +92,17 @@ class App
         }
 
         pessoa.saldo -= valor;
-        pessoa.imprimirSaldo();
+        pessoa.ImprimirSaldo();
+
+        _clienteRepository.Update(pessoa);
     }
 
-    static private bool isCpfValid(string cpf)
+    static private bool IsCpfValid(string cpf)
     {
         return Cpf.Validar(cpf); 
     }
 
-    static private Cliente salvarDadosCliente()
+    static private Cliente LerDadosDoCliente()
     {
         Console.WriteLine("Seu nome: ");
         string nome = Console.ReadLine();
@@ -75,8 +110,8 @@ class App
         int id = int.Parse(Console.ReadLine());
         Console.WriteLine("Seu CPF: ");
         string cpf = Console.ReadLine();
-        
-        if (!isCpfValid(cpf))
+
+        if (!IsCpfValid(cpf))
         {
             Console.WriteLine("CPF digitado não é válido.");
         }
@@ -84,10 +119,20 @@ class App
         Console.WriteLine("Seu saldo: ");
         float saldo = float.Parse(Console.ReadLine());
 
-        return new Cliente(saldo, nome, id, cpf);
+        return SalvarDadosCliente(saldo, nome, id, cpf);
     }
 
-    static void menu()
+    static private Cliente SalvarDadosCliente(float saldo, string nome, int id, string cpf)
+    {
+        
+        Cliente cliente = new Cliente(saldo, nome, id, cpf);
+        _clienteRepository.Create(cliente);
+        Console.WriteLine("Cliente salvo com sucesso!"); 
+
+        return cliente; 
+    }
+
+    static void Menu()
     {
         Console.WriteLine("1 - Depósito");
         Console.WriteLine("2 - Saque");

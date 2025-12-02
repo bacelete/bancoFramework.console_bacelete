@@ -1,4 +1,8 @@
-namespace codigo.modelo; 
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace codigo.Model;
+
 public class Cliente : Pessoa
 {
     public float saldo {get; set;}
@@ -9,7 +13,7 @@ public class Cliente : Pessoa
         this.saldo = saldo;  
     }
 
-    public void imprimirSaldo()
+    public void ImprimirSaldo()
     {
         Console.WriteLine($"Seu saldo é: {saldo}"); 
     }
